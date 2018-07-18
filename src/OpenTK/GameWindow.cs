@@ -368,11 +368,16 @@ namespace OpenTK
                     ProcessEvents();
                     if (Exists && !IsExiting)
                     {
+                        updatedEver = !fix_cpu_waste;
                         if (isSingleThreaded)
                         {
                             DispatchUpdateFrame(watchRender);
                         }
                         DispatchRenderFrame();
+                        if (!updatedEver)
+                        {
+                            Thread.Sleep(1);
+                        }
                     }
                     else
                     {
@@ -388,6 +393,27 @@ namespace OpenTK
                     //while (this.Exists)
                     //    ProcessEvents(false);
                 }
+            }
+        }
+
+        bool updatedEver = false;
+
+        bool fix_cpu_waste = false;
+
+        /// <summary>
+        /// Gets or sets a boolean indicating whether CPU usage should be reduced via thread yielding.
+        /// </summary>
+        public bool ReduceCPUWaste
+        {
+            get
+            {
+                EnsureUndisposed();
+                return fix_cpu_waste;
+            }
+            set
+            {
+                EnsureUndisposed();
+                fix_cpu_waste = value;
             }
         }
 
@@ -414,6 +440,7 @@ namespace OpenTK
 
             while (elapsed > 0 && elapsed + update_epsilon >= TargetUpdatePeriod)
             {
+                updatedEver = true;
                 RaiseUpdateFrame(watch, elapsed, ref timestamp);
 
                 // Calculate difference (positive or negative) between
@@ -449,6 +476,7 @@ namespace OpenTK
             double elapsed = ClampElapsed(timestamp - render_timestamp);
             if (elapsed > 0 && elapsed >= TargetRenderPeriod)
             {
+                updatedEver = true;
                 RaiseRenderFrame(elapsed, ref timestamp);
             }
         }
